@@ -93,6 +93,8 @@ stats, err := g3o.TrackInArea(points, timeS, park, 5)
 // stats.TimeS, stats.DistanceM
 ```
 
+`TrackInAreas` does the same against the union of several areas (a place stored as more than one geometry), never double-counting overlaps.
+
 Segments fully inside count whole, boundary-crossing segments count half - at watch sample rates the difference from exact intersection math is below GPS noise. What a share means (a visit? the run's main location?) is deliberately left to the caller.
 
 ## Feedback

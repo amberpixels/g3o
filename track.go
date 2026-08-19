@@ -25,6 +25,17 @@ type TrackStats struct {
 // The result reports measured quantities only; shares, thresholds and any
 // primary-vs-visited classification are the caller's business.
 func TrackInArea(points []Point, timeS []float64, a *Area, bufferM float64) (TrackStats, error) {
+	if a == nil {
+		return TrackInAreas(points, timeS, nil, bufferM)
+	}
+	return TrackInAreas(points, timeS, []Area{*a}, bufferM)
+}
+
+// TrackInAreas is TrackInArea against the union of several areas: a point is
+// inside when any of them contains it, so overlapping areas never double-count
+// a segment. This is the natural shape for a named place stored as more than
+// one geometry (a park polygon plus a connecting strip).
+func TrackInAreas(points []Point, timeS []float64, areas []Area, bufferM float64) (TrackStats, error) {
 	if len(points) != len(timeS) {
 		return TrackStats{}, fmt.Errorf(
 			"g3o: track points (%d) and times (%d) length mismatch",
@@ -32,13 +43,18 @@ func TrackInArea(points []Point, timeS []float64, a *Area, bufferM float64) (Tra
 			len(timeS),
 		)
 	}
-	if len(points) < 2 {
+	if len(points) < 2 || len(areas) == 0 {
 		return TrackStats{}, nil
 	}
 
 	inside := make([]bool, len(points))
 	for i, p := range points {
-		inside[i] = a.ContainsM(p, bufferM)
+		for j := range areas {
+			if areas[j].ContainsM(p, bufferM) {
+				inside[i] = true
+				break
+			}
+		}
 	}
 
 	var st TrackStats

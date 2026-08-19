@@ -112,3 +112,29 @@ func TestTrackInAreaBufferWidensInside(t *testing.T) {
 	}
 	wantNear(t, st.TimeS, 10, 0.01, "buffered TimeS")
 }
+
+func TestTrackInAreasUnionNoDoubleCount(t *testing.T) {
+	// Two overlapping squares: 0..100 and 50..150 on the same midline. A
+	// track crossing both must count each inside segment once, not twice.
+	a := square100(t)
+	b := polygonArea(t, ring([2]float64{50, 0}, [2]float64{150, 0}, [2]float64{150, 100}, [2]float64{50, 100}))
+
+	pts, times := walkEast(10, 20) // x=10..110, inside the union throughout
+	st, err := g3o.TrackInAreas(pts, times, []g3o.Area{*a, *b}, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantNear(t, st.TimeS, 20, 0.01, "union TimeS")
+	wantNear(t, st.DistanceM, 100, 0.5, "union DistanceM")
+}
+
+func TestTrackInAreasEmpty(t *testing.T) {
+	pts, times := walkEast(10, 5)
+	st, err := g3o.TrackInAreas(pts, times, nil, 0)
+	if err != nil || st != (g3o.TrackStats{}) {
+		t.Errorf("no areas: got %+v, %v; want zero, nil", st, err)
+	}
+	if _, err := g3o.TrackInAreas(make([]g3o.Point, 2), make([]float64, 3), nil, 0); err == nil {
+		t.Error("length mismatch: want error even with no areas")
+	}
+}
