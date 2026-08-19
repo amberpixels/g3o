@@ -1,4 +1,4 @@
-// Package geo is pure WGS84 / GeoJSON geometry for city-scale features:
+// Package g3o is pure WGS84 / GeoJSON geometry for city-scale features:
 // points, distances, areas (Polygon / MultiPolygon / LineString strips),
 // containment, and GPS-track statistics.
 //
@@ -7,7 +7,7 @@
 // meant for continent-sized shapes or geometries crossing the antimeridian.
 // The package is stdlib-only by design: both of its consumers value a
 // dependency-free graph.
-package geo
+package g3o
 
 import "math"
 

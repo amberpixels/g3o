@@ -1,17 +1,17 @@
-package geo_test
+package g3o_test
 
 import (
 	"encoding/json"
 	"testing"
 
-	"github.com/amberpixels/geo"
+	"github.com/amberpixels/g3o"
 )
 
 func TestContainsSquare(t *testing.T) {
 	sq := square100(t)
 	cases := []struct {
 		name    string
-		p       geo.Point
+		p       g3o.Point
 		bufferM float64
 		want    bool
 	}{
@@ -69,7 +69,7 @@ func TestContainsStrip(t *testing.T) {
 	strip := stripArea(t, 10, [2]float64{0, 0}, [2]float64{200, 0})
 	cases := []struct {
 		name    string
-		p       geo.Point
+		p       g3o.Point
 		bufferM float64
 		want    bool
 	}{
@@ -90,7 +90,7 @@ func TestContainsStrip(t *testing.T) {
 
 func TestContainsMalformed(t *testing.T) {
 	width := 5.0
-	for name, a := range map[string]*geo.Area{
+	for name, a := range map[string]*g3o.Area{
 		"nil area":              nil,
 		"empty geometry":        {},
 		"bad json":              {Geometry: json.RawMessage(`{`)},

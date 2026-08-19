@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="logo.svg" alt="geo" width="208">
+  <img src="logo.svg" alt="g3o" width="208">
 </p>
 
 <div align="center">
@@ -8,15 +8,15 @@
 
 Dependency-free WGS84/GeoJSON geometry for Go: points, areas, containment, GPS-track stats.
 
-[![Go Reference](https://pkg.go.dev/badge/github.com/amberpixels/geo.svg)](https://pkg.go.dev/github.com/amberpixels/geo)
-[![Go Version](https://img.shields.io/github/go-mod/go-version/amberpixels/geo)](go.mod)
+[![Go Reference](https://pkg.go.dev/badge/github.com/amberpixels/g3o.svg)](https://pkg.go.dev/github.com/amberpixels/g3o)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/amberpixels/g3o)](go.mod)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
 
 </div>
 
 ---
 
-geo answers the questions city-scale apps keep asking about named places: how big is this park, where is its center, is this GPS point inside it, and how much of this run happened there. An `Area` is a GeoJSON `Polygon`, `MultiPolygon`, or `LineString` strip (a line plus a width in meters - a trail, an embankment); everything else is functions over it.
+g3o answers the questions city-scale apps keep asking about named places: how big is this park, where is its center, is this GPS point inside it, and how much of this run happened there. An `Area` is a GeoJSON `Polygon`, `MultiPolygon`, or `LineString` strip (a line plus a width in meters - a trail, an embankment); everything else is functions over it.
 
 All planar math uses a local equirectangular projection, which is accurate to well under GPS noise at park-and-street scale. The library is stdlib-only.
 
@@ -26,7 +26,7 @@ All planar math uses a local equirectangular projection, which is accurate to we
 ## Install
 
 ```bash
-go get github.com/amberpixels/geo
+go get github.com/amberpixels/g3o
 ```
 
 ## Quick Start
@@ -38,11 +38,11 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/amberpixels/geo"
+	"github.com/amberpixels/g3o"
 )
 
 func main() {
-	park := &geo.Area{Geometry: json.RawMessage(`{
+	park := &g3o.Area{Geometry: json.RawMessage(`{
 		"type": "Polygon",
 		"coordinates": [[
 			[28.8225, 47.0210], [28.8317, 47.0210],
@@ -60,7 +60,7 @@ func main() {
 	fmt.Println(center)
 
 	// Is this GPS sample in the park? Allow 5 m of jitter.
-	fmt.Println(park.ContainsM(geo.Point{Lat: 47.024, Lng: 28.827}, 5))
+	fmt.Println(park.ContainsM(g3o.Point{Lat: 47.024, Lng: 28.827}, 5))
 }
 ```
 
@@ -89,7 +89,7 @@ Malformed geometry is never an error here - it just contains nothing.
 `TrackInArea` measures how much of a GPS track fell inside an area: points and per-sample time offsets (seconds) come as parallel slices, the same buffer tolerance applies, and the result is time-inside and distance-inside.
 
 ```go
-stats, err := geo.TrackInArea(points, timeS, park, 5)
+stats, err := g3o.TrackInArea(points, timeS, park, 5)
 // stats.TimeS, stats.DistanceM
 ```
 
@@ -97,8 +97,8 @@ Segments fully inside count whole, boundary-crossing segments count half - at wa
 
 ## Feedback
 
-geo is a solo, opinionated project - but if you stumbled upon it and have
-ideas, questions, or bug reports, an [issue](https://github.com/amberpixels/geo/issues) is always welcome :)
+g3o is a solo, opinionated project - but if you stumbled upon it and have
+ideas, questions, or bug reports, an [issue](https://github.com/amberpixels/g3o/issues) is always welcome :)
 
 ## License
 

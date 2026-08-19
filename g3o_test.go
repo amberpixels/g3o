@@ -1,4 +1,4 @@
-package geo_test
+package g3o_test
 
 import (
 	"encoding/json"
@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/amberpixels/geo"
+	"github.com/amberpixels/g3o"
 )
 
 // The fixtures live near Chișinău (47.02N, 28.83E) so the projection math is
@@ -20,8 +20,8 @@ const (
 
 // offsetM returns the point dxM meters east and dyM meters north of the
 // fixture origin, inverting the library's own equirectangular projection.
-func offsetM(dxM, dyM float64) geo.Point {
-	return geo.Point{
+func offsetM(dxM, dyM float64) g3o.Point {
+	return g3o.Point{
 		Lat: lat0 + dyM/111_320.0,
 		Lng: lng0 + dxM/(111_320.0*math.Cos(lat0*math.Pi/180)),
 	}
@@ -38,25 +38,25 @@ func ring(corners ...[2]float64) [][2]float64 {
 	return out
 }
 
-func polygonArea(t *testing.T, rings ...[][2]float64) *geo.Area {
+func polygonArea(t *testing.T, rings ...[][2]float64) *g3o.Area {
 	t.Helper()
 	coords, err := json.Marshal(rings)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return &geo.Area{Geometry: json.RawMessage(`{"type":"Polygon","coordinates":` + string(coords) + `}`)}
+	return &g3o.Area{Geometry: json.RawMessage(`{"type":"Polygon","coordinates":` + string(coords) + `}`)}
 }
 
-func multiPolygonArea(t *testing.T, polys ...[][][2]float64) *geo.Area {
+func multiPolygonArea(t *testing.T, polys ...[][][2]float64) *g3o.Area {
 	t.Helper()
 	coords, err := json.Marshal(polys)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return &geo.Area{Geometry: json.RawMessage(`{"type":"MultiPolygon","coordinates":` + string(coords) + `}`)}
+	return &g3o.Area{Geometry: json.RawMessage(`{"type":"MultiPolygon","coordinates":` + string(coords) + `}`)}
 }
 
-func stripArea(t *testing.T, widthM float64, pts ...[2]float64) *geo.Area {
+func stripArea(t *testing.T, widthM float64, pts ...[2]float64) *g3o.Area {
 	t.Helper()
 	coords := make([][2]float64, len(pts))
 	for i, c := range pts {
@@ -67,7 +67,7 @@ func stripArea(t *testing.T, widthM float64, pts ...[2]float64) *geo.Area {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return &geo.Area{
+	return &g3o.Area{
 		Geometry:    json.RawMessage(`{"type":"LineString","coordinates":` + string(raw) + `}`),
 		WidthMeters: &widthM,
 	}
@@ -75,7 +75,7 @@ func stripArea(t *testing.T, widthM float64, pts ...[2]float64) *geo.Area {
 
 // square100 is the 100m x 100m square with corners (0,0)..(100,100), in
 // meter offsets from the fixture origin.
-func square100(t *testing.T) *geo.Area {
+func square100(t *testing.T) *g3o.Area {
 	t.Helper()
 	return polygonArea(t, ring([2]float64{0, 0}, [2]float64{100, 0}, [2]float64{100, 100}, [2]float64{0, 100}))
 }
@@ -89,8 +89,8 @@ func wantNear(t *testing.T, got, want, tolerance float64, what string) {
 
 func TestDistanceM(t *testing.T) {
 	// 300m east, 400m north: a 3-4-5 triangle.
-	wantNear(t, geo.DistanceM(offsetM(0, 0), offsetM(300, 400)), 500, 0.5, "DistanceM")
-	if d := geo.DistanceM(offsetM(50, 50), offsetM(50, 50)); d != 0 {
+	wantNear(t, g3o.DistanceM(offsetM(0, 0), offsetM(300, 400)), 500, 0.5, "DistanceM")
+	if d := g3o.DistanceM(offsetM(50, 50), offsetM(50, 50)); d != 0 {
 		t.Errorf("DistanceM to itself = %g, want 0", d)
 	}
 }
@@ -103,7 +103,7 @@ func TestSizeM2AndCenter(t *testing.T) {
 	if !ok {
 		t.Fatal("Center not ok")
 	}
-	wantNear(t, geo.DistanceM(c, offsetM(50, 50)), 0, 1, "square center offset")
+	wantNear(t, g3o.DistanceM(c, offsetM(50, 50)), 0, 1, "square center offset")
 }
 
 func TestMainExtentM(t *testing.T) {
@@ -120,7 +120,7 @@ func TestPointAlong(t *testing.T) {
 	if !ok {
 		t.Fatal("PointAlong not ok")
 	}
-	wantNear(t, geo.DistanceM(p, offsetM(50, 0)), 0, 1, "strip PointAlong(0.25)")
+	wantNear(t, g3o.DistanceM(p, offsetM(50, 0)), 0, 1, "strip PointAlong(0.25)")
 }
 
 func TestCenterDegenerateRing(t *testing.T) {
@@ -131,7 +131,7 @@ func TestCenterDegenerateRing(t *testing.T) {
 	if !ok {
 		t.Fatal("Center not ok on degenerate ring")
 	}
-	wantNear(t, geo.DistanceM(c, offsetM(100, 0)), 0, 1, "degenerate ring center")
+	wantNear(t, g3o.DistanceM(c, offsetM(100, 0)), 0, 1, "degenerate ring center")
 }
 
 func TestValidate(t *testing.T) {
@@ -139,28 +139,28 @@ func TestValidate(t *testing.T) {
 	tooWide := 500.0
 	cases := []struct {
 		name    string
-		area    *geo.Area
+		area    *g3o.Area
 		wantErr string // empty = valid
 		want    string // expected geometry type when valid
 	}{
-		{"polygon ok", square100(t), "", geo.GeomPolygon},
-		{"strip ok", stripArea(t, 5, [2]float64{0, 0}, [2]float64{100, 0}), "", geo.GeomLineString},
-		{"nil geometry", &geo.Area{}, "geometry is required", ""},
-		{"bad json", &geo.Area{Geometry: json.RawMessage(`{`)}, "invalid geometry json", ""},
+		{"polygon ok", square100(t), "", g3o.GeomPolygon},
+		{"strip ok", stripArea(t, 5, [2]float64{0, 0}, [2]float64{100, 0}), "", g3o.GeomLineString},
+		{"nil geometry", &g3o.Area{}, "geometry is required", ""},
+		{"bad json", &g3o.Area{Geometry: json.RawMessage(`{`)}, "invalid geometry json", ""},
 		{
 			"unsupported type",
-			&geo.Area{Geometry: json.RawMessage(`{"type":"Point","coordinates":[28.83,47.02]}`)},
+			&g3o.Area{Geometry: json.RawMessage(`{"type":"Point","coordinates":[28.83,47.02]}`)},
 			"unsupported geometry type",
 			"",
 		},
 		{
 			"linestring without width",
-			&geo.Area{Geometry: json.RawMessage(`{"type":"LineString","coordinates":[[28.83,47.02],[28.84,47.02]]}`)},
+			&g3o.Area{Geometry: json.RawMessage(`{"type":"LineString","coordinates":[[28.83,47.02],[28.84,47.02]]}`)},
 			"widthMeters is required", "",
 		},
 		{
 			"linestring width out of bounds",
-			&geo.Area{
+			&g3o.Area{
 				Geometry:    json.RawMessage(`{"type":"LineString","coordinates":[[28.83,47.02],[28.84,47.02]]}`),
 				WidthMeters: &tooWide,
 			},
@@ -169,12 +169,12 @@ func TestValidate(t *testing.T) {
 		},
 		{
 			"polygon with width",
-			&geo.Area{Geometry: square100(t).Geometry, WidthMeters: &width},
+			&g3o.Area{Geometry: square100(t).Geometry, WidthMeters: &width},
 			"widthMeters must be omitted", "",
 		},
 		{
 			"open ring",
-			&geo.Area{
+			&g3o.Area{
 				Geometry: json.RawMessage(
 					`{"type":"Polygon","coordinates":[[[28.83,47.02],[28.84,47.02],[28.84,47.03],[28.83,47.03]]]}`,
 				),
@@ -184,7 +184,7 @@ func TestValidate(t *testing.T) {
 		},
 		{
 			"longitude out of range",
-			&geo.Area{
+			&g3o.Area{
 				Geometry:    json.RawMessage(`{"type":"LineString","coordinates":[[181,47.02],[28.84,47.02]]}`),
 				WidthMeters: &width,
 			},

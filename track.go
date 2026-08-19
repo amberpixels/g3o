@@ -1,4 +1,4 @@
-package geo
+package g3o
 
 import "fmt"
 
@@ -27,7 +27,7 @@ type TrackStats struct {
 func TrackInArea(points []Point, timeS []float64, a *Area, bufferM float64) (TrackStats, error) {
 	if len(points) != len(timeS) {
 		return TrackStats{}, fmt.Errorf(
-			"geo: track points (%d) and times (%d) length mismatch",
+			"g3o: track points (%d) and times (%d) length mismatch",
 			len(points),
 			len(timeS),
 		)
