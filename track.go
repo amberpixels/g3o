@@ -6,6 +6,9 @@ import "fmt"
 type TrackStats struct {
 	// TimeS is the time spent inside, in seconds.
 	TimeS float64
+	// MovingTimeS is the part of TimeS whose samples were moving, per the
+	// caller's mask. Equal to TimeS when no mask was given.
+	MovingTimeS float64
 	// DistanceM is the distance covered inside, in meters.
 	DistanceM float64
 }
@@ -14,6 +17,13 @@ type TrackStats struct {
 // and timeS are parallel slices (per-sample time offsets in seconds, the
 // shape activity streams decode to), and bufferM is the same jitter tolerance
 // ContainsM takes, so the two agree on what "inside" means.
+//
+// moving is an optional per-sample mask, parallel to points: false marks a
+// sample recorded while standing still (a water stop, a traffic light). A
+// segment counts toward MovingTimeS when the sample that closes it is moving,
+// since a watch's speed at sample i describes the interval arriving at i -
+// the same rule the device's own moving time is summed by. A nil or empty
+// mask means every sample is moving, so MovingTimeS equals TimeS.
 //
 // Attribution is per segment: both endpoints inside counts the segment's full
 // dt and distance, exactly one endpoint inside counts half of each, neither
@@ -24,23 +34,30 @@ type TrackStats struct {
 //
 // The result reports measured quantities only; shares, thresholds and any
 // primary-vs-visited classification are the caller's business.
-func TrackInArea(points []Point, timeS []float64, a *Area, bufferM float64) (TrackStats, error) {
+func TrackInArea(points []Point, timeS []float64, moving []bool, a *Area, bufferM float64) (TrackStats, error) {
 	if a == nil {
-		return TrackInAreas(points, timeS, nil, bufferM)
+		return TrackInAreas(points, timeS, moving, nil, bufferM)
 	}
-	return TrackInAreas(points, timeS, []Area{*a}, bufferM)
+	return TrackInAreas(points, timeS, moving, []Area{*a}, bufferM)
 }
 
 // TrackInAreas is TrackInArea against the union of several areas: a point is
 // inside when any of them contains it, so overlapping areas never double-count
 // a segment. This is the natural shape for a named place stored as more than
 // one geometry (a park polygon plus a connecting strip).
-func TrackInAreas(points []Point, timeS []float64, areas []Area, bufferM float64) (TrackStats, error) {
+func TrackInAreas(points []Point, timeS []float64, moving []bool, areas []Area, bufferM float64) (TrackStats, error) {
 	if len(points) != len(timeS) {
 		return TrackStats{}, fmt.Errorf(
 			"g3o: track points (%d) and times (%d) length mismatch",
 			len(points),
 			len(timeS),
+		)
+	}
+	if len(moving) > 0 && len(moving) != len(points) {
+		return TrackStats{}, fmt.Errorf(
+			"g3o: track points (%d) and moving mask (%d) length mismatch",
+			len(points),
+			len(moving),
 		)
 	}
 	if len(points) < 2 || len(areas) == 0 {
@@ -73,6 +90,9 @@ func TrackInAreas(points []Point, timeS []float64, areas []Area, bufferM float64
 			dt = 0
 		}
 		st.TimeS += f * dt
+		if len(moving) == 0 || moving[i] {
+			st.MovingTimeS += f * dt
+		}
 		st.DistanceM += f * DistanceM(points[i-1], points[i])
 	}
 	return st, nil

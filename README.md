@@ -89,9 +89,11 @@ Malformed geometry is never an error here - it just contains nothing.
 `TrackInArea` measures how much of a GPS track fell inside an area: points and per-sample time offsets (seconds) come as parallel slices, the same buffer tolerance applies, and the result is time-inside and distance-inside.
 
 ```go
-stats, err := g3o.TrackInArea(points, timeS, park, 5)
-// stats.TimeS, stats.DistanceM
+stats, err := g3o.TrackInArea(points, timeS, nil, park, 5)
+// stats.TimeS, stats.MovingTimeS, stats.DistanceM
 ```
+
+The third argument is an optional per-sample moving mask (`[]bool`, parallel to the points): samples marked `false` - a water stop, a traffic light - still count toward `TimeS` but not toward `MovingTimeS`, so a pace inside the area can exclude the stops the same way a watch's moving time does. A segment follows the sample that closes it. `nil` means everything moved and the two figures are equal.
 
 `TrackInAreas` does the same against the union of several areas (a place stored as more than one geometry), never double-counting overlaps.
 
